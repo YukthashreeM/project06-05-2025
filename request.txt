@@ -1,0 +1,34 @@
+<?php
+session_start();
+include 'db.php'; // Make sure this includes your DB connection
+
+function generateToken() {
+    return bin2hex(random_bytes(16));
+}
+
+if (isset($_POST['request_reset'])) {
+    $username = $_POST['username'];
+
+    // Generate token and set expiry time (1 minute from now)
+    $token = generateToken();
+    $expiry = date("Y-m-d H:i:s", strtotime("+1 minute"));
+
+    // Store the token and expiry time in the database
+    $stmt = $conn->prepare("UPDATE users SET reset_token=?, token_expiry=? WHERE username=?");
+    $stmt->bind_param("sss", $token, $expiry, $username);
+    $stmt->execute();
+
+    if ($stmt->affected_rows > 0) {
+        // Send the reset link to the user (You can replace this with actual email sending logic)
+        echo "Reset token generated. Use this link: <a href='reset_password.php?token=$token'>Reset Password</a>";
+    } else {
+        echo "Username not found.";
+    }
+}
+?>
+
+<form method="post">
+    <input type="text" name="username" placeholder="Enter your username" required><br>
+    <input type="submit" name="request_reset" value="Request Password Reset">
+</form>
+-
